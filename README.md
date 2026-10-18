@@ -14,6 +14,8 @@
 
 ![Forks](https://img.shields.io/github/forks/Fozkais/CMS21-Together?style=social) ![Stargazers](https://img.shields.io/github/stars/Fozkais/CMS21-Together?style=social) ![License](https://img.shields.io/github/license/Fozkais/CMS21-Together) 
 
+**Note: As of 18/10/2026 the development of the mod is now stopped. If you want to use it i recommend the [CMS21-Togther-Fixes](https://www.nexusmods.com/carmechanicsimulator2021/mods/286?tab=description) additionnal mod. It fixes mosts issues of the multiplayer mod and is (as a know) still maintained.**
+
 ## Table Of Contents
 
 * [About the Project](#about-the-project)
