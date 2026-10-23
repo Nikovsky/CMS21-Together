@@ -91,17 +91,15 @@ namespace CMS21Together
 			GameManager.Instance.StartCoroutine(routine);
 		}
 
-        public override void OnLateUpdate()
-        {
-            if (!isModInitialized)
-                return;
-
-            UICore.TracePanelState();
-            UICore.TraceWindowInput();
-            UICore.TraceKeyboardInput();
-        }
-
-        public override void OnInitializeMelon()
+		public override void OnLateUpdate()
+		{
+			if (!isModInitialized)
+			{
+				return;
+			}
+		}
+		
+		public override void OnInitializeMelon()
 		{
 			ClassInjector.RegisterTypeInIl2Cpp<InfoBillboard>();
 		}
