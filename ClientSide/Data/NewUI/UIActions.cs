@@ -52,10 +52,17 @@ public static class UIActions
 	}
 	public static void StartServer(string username, int save_index)
 	{
-		ClientData.UserData.username = username;
-		TogetherModManager.SavePreferences();
-		
-		Client.Instance.OnConnected += () =>
+        if (SaveSlotGuard.Inspect(save_index) == SaveSlotState.Protected)
+        {
+            UICustomPanel.CreateInfoPanel(
+                "Existing or unknown save: slot protected. No game started.");
+            return;
+        }
+
+        ClientData.UserData.username = username;
+        TogetherModManager.SavePreferences();
+
+        Client.Instance.OnConnected += () =>
 		{
 			UICore.ShowPanel(UICore.MP_Lobby);
 			if (ClientData.UserData.selectedNetworkType == NetworkType.Steam)
@@ -68,11 +75,7 @@ public static class UIActions
 			UICore.ShowPanel(UICore.MP_Main);
 			UICustomPanel.CreateInfoPanel("Failed to connect to server !");
 		};
-		if (SaveSlotGuard.Inspect(save_index) == SaveSlotState.Protected)
-		{
-			UICustomPanel.CreateInfoPanel("Existing or unknown save: slot protected. No game started.");
-			return;
-		}
+
 		Server.Instance.StartServer(ClientData.UserData.selectedNetworkType);
 		SaveSystem.LoadGame(SaveSystem.Extensions[save_index], save_index);
 	}
