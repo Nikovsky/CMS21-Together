@@ -129,24 +129,31 @@ namespace CMS21Together
 
 		public override void OnUpdate()
 		{
-			if (!isModInitialized || !Client.Instance.isConnected)
+			if (!isModInitialized)
 				return;
 
-			if (SceneManager.CurrentScene() == GameScene.garage)
-				ClientData.Instance.UpdateClient();
-
-
-			if (MainMod.IsSteamAvailable)
+			// Steam callbacks must run before a client connection exists:
+			// a friend invite can arrive while the user is still in the menu.
+			if (IsSteamAvailable)
 			{
 				SteamClient.RunCallbacks();
-				if (Client.Instance.steam != null) Client.Instance.steam.Receive();
-				if (Server.Instance.steam != null) Server.Instance.steam.Receive();
 				TryExecutePendingJoin();
 			}
-			
+
+			if (Client.Instance.isConnected)
+			{
+				if (SceneManager.CurrentScene() == GameScene.garage)
+					ClientData.Instance.UpdateClient();
+			}
+
+			if (IsSteamAvailable)
+			{
+				if (Client.Instance.steam != null) Client.Instance.steam.Receive();
+				if (Server.Instance.steam != null) Server.Instance.steam.Receive();
+			}
+
 			ThreadManager.UpdateThread();
 		}
-
 
 		public static void StartCoroutine(IEnumerator routine)
 		{
