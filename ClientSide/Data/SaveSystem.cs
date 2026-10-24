@@ -89,6 +89,11 @@ public static class SaveSystem
 
 	public static void LoadGame(ModProfileExtension data, int index)
 	{
+		if (SaveSlotGuard.Inspect(index) == SaveSlotState.Protected)
+		{
+			MelonLogger.Warning($"[SAVE-001B] Protected slot {index}: game load blocked.");
+			return;
+		}
 		Singleton<GameManager>.Instance.RDGPlayerPrefs.SetInt("selectedProfile", index);
 		Singleton<GameManager>.Instance.ProfileManager.Load();
 		
@@ -128,6 +133,11 @@ public static class SaveSystem
 	
 	public static void DeleteSave(int index)
 	{
+		if (SaveSlotGuard.Inspect(index) == SaveSlotState.Protected)
+		{
+			MelonLogger.Warning($"[SAVE-001B] Protected slot {index}: deletion blocked.");
+			return;
+		}
 		var saveFilePath = Path.Combine(GAME_SAVE_FOLDER, $"profile{index}.cms21b");
 		if (File.Exists(saveFilePath))
 		{
