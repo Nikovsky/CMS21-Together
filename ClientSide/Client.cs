@@ -152,8 +152,11 @@ public class Client
 		Application.runInBackground = false;
 		isConnected = false;
 		
-		tcp.Disconnect();
-		udp.Disconnect();
+		// Steam connections do not create TCP/UDP transports.
+		if (tcp != null)
+			tcp.Disconnect();
+		if (udp != null)
+			udp.Disconnect();
 		
 		if (SceneManager.GetActiveScene().name != "Menu")
 		{
