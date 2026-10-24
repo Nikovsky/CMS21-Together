@@ -44,6 +44,7 @@ public static class UIElements
 		btn.OnMouseHover = DelegateSupport.ConvertDelegate<Il2CppSystem.Action<int>>(
 			new Action<int>((i) =>
 			{
+				MultiplayerKeyboardNavigation.OnMouseHover(btn);
 				btn.transform.parent.GetComponent<ListNavigationManager>()?.DeselectCurrent();
 				btn.Select();
 			})
