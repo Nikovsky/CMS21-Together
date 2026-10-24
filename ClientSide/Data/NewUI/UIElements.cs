@@ -41,14 +41,20 @@ public static class UIElements
 		}
 		else
 			btn.OnClick.AddListener(onClick);
-		btn.OnMouseHover = DelegateSupport.ConvertDelegate<Il2CppSystem.Action<int>>(
-			new Action<int>((i) =>
-			{
-				btn.transform.parent.GetComponent<ListNavigationManager>()?.DeselectCurrent();
-				btn.Select();
-			})
-		);
-		return btn;
+        btn.OnMouseHover =
+            DelegateSupport.ConvertDelegate<Il2CppSystem.Action<int>>(
+                new Action<int>((i) =>
+                {
+                    MultiplayerKeyboardNavigation.OnMouseHover(btn);
+
+                    btn.transform.parent
+                        .GetComponent<ListNavigationManager>()
+                        ?.DeselectCurrent();
+
+                    btn.Select();
+                })
+            );
+        return btn;
 	}
 
 	public static InputField CreateInput(Transform parent, string defaultText = "")
