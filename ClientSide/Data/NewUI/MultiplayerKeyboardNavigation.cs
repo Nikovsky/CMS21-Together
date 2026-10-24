@@ -192,6 +192,12 @@ public static class MultiplayerKeyboardNavigation
             return;
         }
 
+        if (!Input.GetKeyDown(KeyCode.DownArrow) &&
+            !Input.GetKeyDown(KeyCode.UpArrow) &&
+            !Input.GetKeyDown(KeyCode.Return) &&
+            !Input.GetKeyDown(KeyCode.KeypadEnter))
+            return;
+
         if (HasFocusedInput(root))
             return;
 
