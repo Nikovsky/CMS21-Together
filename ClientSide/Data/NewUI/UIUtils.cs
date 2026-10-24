@@ -13,6 +13,8 @@ public static class UIUtils
 	public static string GetSaveName(int index)
 	{
 		var validIndex = index;
+		if (SaveSlotGuard.Inspect(validIndex) == SaveSlotState.Protected)
+			return "Protected save";
 		if (!String.IsNullOrEmpty(SaveSystem.Extensions[validIndex].Name))
 			return SaveSystem.Extensions[validIndex].Name;
 		return "New game";
