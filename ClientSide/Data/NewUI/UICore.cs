@@ -5,6 +5,7 @@ using System.Linq;
 using CMS.MainMenu.Controls;
 using CMS.MainMenu.Sections;
 using CMS.UI.Controls;
+using CMS.MainMenu;
 using CMS21Together.Shared;
 using CMS21Together.Shared.Data;
 using MelonLoader;
@@ -37,7 +38,46 @@ public static class UICore
 	private static bool update_notice = false;
 	public static int last_index_pressed;
 
-	public static void InitializeUI(string sceneName)
+    private static MainMenuManager _vanillaMenuManager;
+    private static bool _menuManagerStateCaptured;
+    private static bool _menuManagerWasEnabled;
+
+
+    private static void SetMainMenuManagerForPanel(
+        GameObject targetPanel)
+    {
+        if (_vanillaMenuManager == null || targetPanel == null)
+            return;
+
+        bool showVanilla = targetPanel == V_Main;
+
+        if (!showVanilla)
+        {
+            if (!_menuManagerStateCaptured)
+            {
+                _menuManagerWasEnabled =
+                    _vanillaMenuManager.enabled;
+
+                _menuManagerStateCaptured = true;
+            }
+
+            _vanillaMenuManager.enabled = false;
+        }
+        else if (_menuManagerStateCaptured)
+        {
+            _vanillaMenuManager.enabled =
+                _menuManagerWasEnabled;
+
+            _menuManagerStateCaptured = false;
+        }
+
+        MelonLogger.Msg(
+            $"[UI-001][MAINMENU] frame={Time.frameCount} " +
+            $"target={targetPanel.name} " +
+            $"enabled={_vanillaMenuManager.enabled}");
+    }
+
+    public static void InitializeUI(string sceneName)
 	{
 		if (sceneName != "Menu") return;
 		
@@ -49,11 +89,33 @@ public static class UICore
 									 .GetComponentInChildren<StringSelector>().gameObject;
 
 		UI_Main = GameObject.Find("MainButtons").transform.parent.gameObject;
-		V_Main = GameObject.Find("MainButtons").GetComponent<MainSection>().gameObject;
-		MP_Main = CreateNewPanel("MP_Main");
+        V_Main = GameObject.Find("MainButtons")
+			.GetComponent<MainSection>().gameObject;
+
+        _vanillaMenuManager =
+            Object.FindObjectOfType<MainMenuManager>();
+
+        _menuManagerStateCaptured = false;
+
+        if (_vanillaMenuManager != null)
+        {
+            MelonLogger.Msg(
+                "[UI-001][MAINMENU] Found MainMenuManager: " +
+                _vanillaMenuManager.gameObject.name);
+        }
+        else
+        {
+            MelonLogger.Warning(
+                "[UI-001][MAINMENU] MainMenuManager not found");
+        }
+
+
+        MP_Main = CreateNewPanel("MP_Main");
 		MP_Host = CreateNewPanel("MP_Host");
 		MP_Lobby = CreateNewPanel("MP_Lobby");
 		
+		// UI-001: Lobby must remain hidden until a session is created.
+		MP_Lobby.SetActive(false);
 		
 		LoadCustomlogo();
 		GameObject.Find("Logo").GetComponent<RectTransform>().sizeDelta = new Vector2(250, 250);
@@ -64,7 +126,6 @@ public static class UICore
 		Active_Panel = UI_Main;
 		MelonCoroutines.Start(CheckModVersion());
 	}
-
 	private static IEnumerator CheckModVersion()
 	{
 		if (update_notice)
@@ -117,7 +178,7 @@ public static class UICore
 	
 	public static void ShowPanel(GameObject panelToShow, bool destroyChildren=false)
 	{
-		if (destroyChildren)
+        if (destroyChildren)
 			DestroyChildren(Active_Panel.transform);
 
 		Active_Panel =  panelToShow;
@@ -125,13 +186,14 @@ public static class UICore
 			Object.Destroy(TMP_Window);
 		if (TMP_Info_Window)
 			Object.Destroy(TMP_Info_Window);
-		
-		V_Main.gameObject.SetActive(false);
+
+        V_Main.gameObject.SetActive(false);
 		MP_Main.gameObject.SetActive(false);
 		MP_Host.gameObject.SetActive(false);
 		MP_Lobby.gameObject.SetActive(false);
 
 		panelToShow.SetActive(true);
+        SetMainMenuManagerForPanel(panelToShow);
 	}
 
 	private static GameObject CreateNewPanel(string name)
@@ -181,4 +243,5 @@ public static class UICore
 				break;
 		}
 	}
+
 }
