@@ -24,8 +24,8 @@ namespace CMS21Together
 		public const string ASSEMBLY_HOTFIX_VERSION = "hf3";
 		public const string MOD_VERSION = "Together " + ASSEMBLY_MOD_VERSION + ASSEMBLY_HOTFIX_VERSION;
 		public bool isModInitialized;
-		
-		public static bool isClosing;
+
+        public static bool isClosing;
 
 		public override void OnLateInitializeMelon()
 		{
@@ -91,15 +91,19 @@ namespace CMS21Together
 			GameManager.Instance.StartCoroutine(routine);
 		}
 
-		public override void OnLateUpdate()
-		{
-			if (!isModInitialized)
-			{
-				return;
-			}
-		}
-		
-		public override void OnInitializeMelon()
+
+
+        public override void OnLateUpdate()
+        {
+            if (!isModInitialized)
+                return;
+
+            MultiplayerKeyboardNavigation.Tick();
+        }
+
+
+
+        public override void OnInitializeMelon()
 		{
 			ClassInjector.RegisterTypeInIl2Cpp<InfoBillboard>();
 		}
