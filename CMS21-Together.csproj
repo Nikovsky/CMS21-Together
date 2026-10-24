@@ -71,6 +71,7 @@
         <Compile Include="ClientSide\Data\GameLoadHook.cs" />
         <Compile Include="ClientSide\Data\NewUI\UIActions.cs" />
         <Compile Include="ClientSide\Data\NewUI\UICore.cs" />
+        <Compile Include="ClientSide\Data\NewUI\MultiplayerKeyboardNavigation.cs" />
         <Compile Include="ClientSide\Data\NewUI\UICustomPanel.cs" />
         <Compile Include="ClientSide\Data\NewUI\UIElements.cs" />
         <Compile Include="ClientSide\Data\NewUI\UILobby.cs" />
