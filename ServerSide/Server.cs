@@ -26,8 +26,9 @@ public class Server
 	public NetworkType networkType;
 
 	public bool isRunning;
+    private bool _isClosing;
 
-	public Dictionary<int, ServerConnection> clients;
+    public Dictionary<int, ServerConnection> clients;
 	public SteamSocket steam;
 	public TcpListener tcp;
 	public UdpClient udp;
@@ -72,42 +73,66 @@ public class Server
 
 	public IEnumerator CloseServer()
 	{
-		if (!isRunning) yield break;
+		if (!isRunning || _isClosing)
+			yield break;
 
-		MelonLogger.Msg("[Server->CloseServer] Saving players infos...");
-		ModProfileExtension save = SaveSystem.Extensions[SaveSystem.selectedSaveIndex];
-		foreach (var id in clients.Keys)
+		_isClosing = true;
+
+		try
 		{
-			if (!ServerData.Instance.connectedClients.ContainsKey(id)) continue;
-			
-			string playerGuid = ServerData.Instance.connectedClients[id].playerGUID;
-			PlayerInfo info = save.PlayerInfos.First(p => playerGuid == p.id);
-			Vector3Serializable pos = ServerData.Instance.connectedClients[id].position;
-			QuaternionSerializable rot = ServerData.Instance.connectedClients[id].rotation;
-			int lvl = ServerData.Instance.connectedClients[id].playerExp;
-			int exp = ServerData.Instance.connectedClients[id].playerLevel;
-			int points = ServerData.Instance.connectedClients[id].playerSkillPoints;
+			MelonLogger.Msg("[Server->CloseServer] Saving players infos...");
+			ModProfileExtension save = SaveSystem.Extensions[SaveSystem.selectedSaveIndex];
 
-			if (save.PlayerInfos.Any(p => playerGuid == p.id))
-				info.UpdateStats(pos, rot, exp , lvl, points);
-			if (id != 1) // dont send to host
-				ServerSend.DisconnectPacket(id, "Server is shutting down.");
+            foreach (var id in clients.Keys)
+            {
+                if (!ServerData.Instance.connectedClients.TryGetValue(
+                        id, out var player) || player == null)
+                    continue;
+
+                PlayerInfo info = save.PlayerInfos?.FirstOrDefault(
+                    p => p != null && p.id == player.playerGUID);
+
+                if (info != null)
+                {
+                    info.UpdateStats(
+                        player.position,
+                        player.rotation,
+                        player.playerExp,
+                        player.playerLevel,
+                        player.playerSkillPoints);
+                }
+                else
+                {
+                    MelonLogger.Warning(
+                        "[SAVE-001B] PlayerInfo not found during shutdown; " +
+                        "player stats were not updated.");
+                }
+
+                if (id != 1)
+                    ServerSend.DisconnectPacket(
+                        id, "Server is shutting down.");
+            }
+
+            yield return new WaitForSeconds(1);
+			MelonLogger.Msg("[Server->CloseServer] Successfully Saved players infos!");
+
+			isRunning = false;
+			Application.runInBackground = false;
+			if (udp != null)
+				udp.Close();
+			if (tcp != null)
+				tcp.Stop();
+			if (steam != null)
+				steam.Close();
+			if (packetHandlers != null)
+				packetHandlers.Clear();
+
+			MelonLogger.Msg("[Server->CloseServer] Server Closed.");
 		}
-		yield return new WaitForSeconds(1);
-		MelonLogger.Msg("[Server->CloseServer] Successfully Saved players infos!");
-		
-		isRunning = false;
-		Application.runInBackground = false;
-		if (udp != null)
-			udp.Close();
-		if (tcp != null)
-			tcp.Stop();
-		if (steam != null)
-		  steam.Close();
-		if (packetHandlers != null)
-			packetHandlers.Clear();
-
-		MelonLogger.Msg("[Server->CloseServer] Server Closed.");
+		finally
+		{
+			_isClosing = false;
+		}
 	}
 
 	private void UDPReceiveCallback(IAsyncResult result)
