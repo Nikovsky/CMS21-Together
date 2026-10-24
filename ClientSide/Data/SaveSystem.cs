@@ -123,6 +123,11 @@ public static class SaveSystem
 	
 	public static void StartGame(int index)
 	{
+		if (SaveSlotGuard.Inspect(index) == SaveSlotState.Protected)
+		{
+			MelonLogger.Warning($"[SAVE-001B] Protected slot {index}: game start blocked.");
+			return;
+		}
 		Application.runInBackground = true;
 		
 		Singleton<GameManager>.Instance.ProfileManager.selectedProfile = index;
