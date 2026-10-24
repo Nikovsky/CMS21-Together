@@ -156,9 +156,9 @@ namespace CMS21Together
 		public override void OnLateUpdate()
 		{
 			if (!isModInitialized)
-			{
 				return;
-			}
+
+			MultiplayerKeyboardNavigation.Tick();
 		}
 		
 		public override void OnInitializeMelon()
