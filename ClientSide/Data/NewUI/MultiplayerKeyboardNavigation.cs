@@ -183,7 +183,7 @@ public static class MultiplayerKeyboardNavigation
         var root = GetRoot();
         SetRoot(root);
 
-        if (root == null || HasFocusedInput(root))
+        if (root == null)
             return;
 
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -191,6 +191,9 @@ public static class MultiplayerKeyboardNavigation
             HandleEscape(root);
             return;
         }
+
+        if (HasFocusedInput(root))
+            return;
 
         if (Input.GetKeyDown(KeyCode.DownArrow))
             Navigate(root, 1);
