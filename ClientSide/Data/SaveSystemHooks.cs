@@ -35,6 +35,12 @@ public static class SaveSystemHooks
     public static bool SaveFix(GameDataManager __instance, int profileID)
     {
         if (profileID <= 3) return true;
+
+        if (SaveSlotGuard.Inspect(profileID) == SaveSlotState.Protected)
+        {
+            MelonLogger.Warning($"[SAVE-001B] Refusing write to protected slot {profileID}.");
+            return false;
+        }
     
         try
         {
