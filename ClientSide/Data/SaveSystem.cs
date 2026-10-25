@@ -19,75 +19,181 @@ public static class SaveSystem
 	public static ModProfileExtension[] Extensions = new ModProfileExtension[MainMod.MAX_SAVE_COUNT];
 	public static ProfileData selectedSave;
 	public static int selectedSaveIndex;
+    public static bool IsInitialized { get; private set; }
 
-	public static void Initialize()
-	{
-	    var gm = Singleton<GameManager>.Instance;
-	    gm.RDGPlayerPrefs.SetInt("selectedProfile", 0);
-	    gm.ProfileManager.Load();
 
-	    var gdm = gm.GameDataManager;
-	    var expandedProfiles = new Il2CppReferenceArray<ProfileData>(MainMod.MAX_SAVE_COUNT);
-	    
-	    var vanillaSaveArray = new Il2CppReferenceArray<SaveData>(4);
-	    for (var i = 0; i < 4; i++) vanillaSaveArray[i] = GetSave(i);
-	    gdm.ReloadProfiles(vanillaSaveArray);
 
-	    if (Extensions == null) Extensions = new ModProfileExtension[MainMod.MAX_SAVE_COUNT];
+    public static void Initialize()
+    {
+        IsInitialized = false;
+        var gm = Singleton<GameManager>.Instance;
 
-	    for (int i = 0; i < MainMod.MAX_SAVE_COUNT; i++)
-	    {
-	        SaveData currentSave = GetSave(i);
-	        bool hasModData = false;
+        gm.RDGPlayerPrefs.SetInt("selectedProfile", 0);
+        gm.ProfileManager.Load();
 
-	        // 2. Extraction du Payload
-	        if (currentSave != null && currentSave.HasData)
-	        {
-	            try
-	            {
-	                byte[] managedData = currentSave.Data.ToArray();
-	                MelonLogger.Msg($"Slot {i} data size: {managedData.Length}");
-	                using var ms = new MemoryStream(managedData);
-	                using var reader = new BinaryReader(ms);
+        var gdm = gm.GameDataManager;
 
-	                if (TryFindModData(reader, out var payload))
-	                {
-	                    Extensions[i] = ModProfileExtension.FromBytes(payload);
-	                    hasModData = true;
-	                }
-	            }
-	            catch (Exception e)
-	            { 
-	                MelonLogger.Error($"[SaveSystem] Error reading slot {i}: {e.Message}"); 
-	            }
-	        }
-	        
-	        if (i < gdm.ProfileData.Length) 
-	        {
-	            expandedProfiles[i] = gdm.ProfileData[i];
-	        }
-	        else if (hasModData)
-	        {
-	            var tempArray = new Il2CppReferenceArray<SaveData>(1);
-	            tempArray[0] = currentSave;
-	            gdm.ReloadProfiles(tempArray); 
-	            expandedProfiles[i] = DataHelper.Copy(gdm.ProfileData[0]);
-	        }
-	        else
-	        {
-	            var empty = new ProfileData();
-	            empty.Init();
-	            expandedProfiles[i] = empty;
-	        }
-	        if (Extensions[i] == null) Extensions[i] = new ModProfileExtension();
-	    }
-	    
-	    gdm.ProfileData = expandedProfiles;
-	    gdm.ReloadProfiles(vanillaSaveArray);
-	    MelonLogger.Msg($"[SaveSystem] Sync complete. Total slots: {expandedProfiles.Length}");
-	}
+        var allSaves = new Il2CppReferenceArray<SaveData>(
+            MainMod.MAX_SAVE_COUNT);
 
-	public static void LoadGame(ModProfileExtension data, int index)
+        var vanillaSaves = new Il2CppReferenceArray<SaveData>(4);
+
+        Extensions = new ModProfileExtension[
+            MainMod.MAX_SAVE_COUNT];
+
+        // Read all files without modifying game profiles.
+        for (int i = 0; i < MainMod.MAX_SAVE_COUNT; i++)
+        {
+            allSaves[i] = GetSave(i);
+        }
+
+        // Initialize the vanilla profiles using the main manager.
+        for (int i = 0; i < 4; i++)
+        {
+            vanillaSaves[i] = allSaves[i];
+        }
+
+        gdm.ReloadProfiles(vanillaSaves);
+
+
+        var vanillaProfiles = gdm.ProfileData;
+
+        int vanillaCount = vanillaProfiles == null
+            ? 0
+            : vanillaProfiles.Length;
+
+        MelonLogger.Msg(
+            $"[SAVE-001][VANILLA] profiles={vanillaCount}");
+
+        if (vanillaCount < 4)
+        {
+            MelonLogger.Error(
+                "[SAVE-001] Vanilla initialization failed. " +
+                $"Profiles available: {vanillaCount}");
+            return;
+        }
+
+
+        var expandedProfiles =
+            new Il2CppReferenceArray<ProfileData>(
+                MainMod.MAX_SAVE_COUNT);
+
+        // Preserve the four profiles loaded by the game.
+        for (int i = 0; i < 4; i++)
+        {
+            expandedProfiles[i] = vanillaProfiles[i];
+        }
+
+        // Load multiplayer profiles using isolated managers.
+        for (int i = 4; i < MainMod.MAX_SAVE_COUNT; i++)
+        {
+            SaveData currentSave = allSaves[i];
+            bool hasModData = false;
+
+            if (currentSave != null && currentSave.HasData)
+            {
+                try
+                {
+                    byte[] managedData = currentSave.Data.ToArray();
+
+                    MelonLogger.Msg(
+                        $"[SAVE-001][FILE] slot={i} " +
+                        $"bytes={managedData.Length}");
+
+                    using var ms = new MemoryStream(managedData);
+                    using var reader = new BinaryReader(ms);
+
+                    if (TryFindModData(reader, out var payload))
+                    {
+                        Extensions[i] =
+                            ModProfileExtension.FromBytes(payload);
+
+                        hasModData = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Error(
+                        $"[SAVE-001] Extension read failed " +
+                        $"for slot {i}: {ex}");
+                }
+            }
+
+            if (Extensions[i] == null)
+            {
+                Extensions[i] = new ModProfileExtension();
+            }
+
+            if (!hasModData)
+            {
+                var empty = new ProfileData();
+                empty.Init();
+
+                expandedProfiles[i] = empty;
+
+                if (currentSave != null && currentSave.HasData)
+                {
+                    MelonLogger.Warning(
+                        $"[SAVE-001] Slot {i} has data " +
+                        "but no readable mod extension.");
+                }
+
+                continue;
+            }
+
+            try
+            {
+                var singleSave =
+                    new Il2CppReferenceArray<SaveData>(1);
+
+                singleSave[0] = currentSave;
+
+                // A separate manager prevents later reloads
+                // from mutating previously loaded profiles.
+                var isolatedManager = new GameDataManager();
+                isolatedManager.InitContainer();
+                isolatedManager.ReloadProfiles(singleSave);
+
+                var profiles = isolatedManager.ProfileData;
+
+                if (profiles == null ||
+                    profiles.Length == 0 ||
+                    profiles[0] == null)
+                {
+                    throw new InvalidDataException(
+                        $"Slot {i}: no profile decoded.");
+                }
+
+                // Retain the decoded object directly.
+                // Do not use DataHelper.Copy().
+                expandedProfiles[i] = profiles[0];
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error(
+                    $"[SAVE-001] Failed loading slot {i}: {ex}");
+
+                // Abort initialization rather than installing
+                // a partially populated profile array.
+                return;
+            }
+        }
+
+        // Install the complete profile array only once.
+        gdm.ProfileData = expandedProfiles;
+
+        MelonLogger.Msg(
+            $"[SAVE-001][INIT] profiles={gdm.ProfileData.Length}");
+
+        MelonLogger.Msg(
+            "[SaveSystem] Profile initialization complete.");
+
+        IsInitialized = true;
+    }
+
+
+
+    public static void LoadGame(ModProfileExtension data, int index)
 	{
 		if (SaveSlotGuard.Inspect(index) == SaveSlotState.Protected)
 		{

@@ -52,6 +52,18 @@ public static class UIActions
 	}
 	public static void StartServer(string username, int save_index)
 	{
+
+        if (!SaveSystem.IsInitialized)
+        {
+            MelonLogger.Error(
+                "[SAVE-001] Host start blocked: profile initialization incomplete.");
+
+            UICustomPanel.CreateInfoPanel(
+                "Cannot start multiplayer: save profiles failed to initialize. Restart the game.");
+
+            return;
+        }
+
         if (SaveSlotGuard.Inspect(save_index) == SaveSlotState.Protected)
         {
             UICustomPanel.CreateInfoPanel(
