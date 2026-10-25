@@ -42,7 +42,6 @@ public static class InventorySync
 			MelonLogger.Msg($"Inventory should be empty : {__instance.items.Count} , {__instance.groups.Count}");
 			
 			Singleton<GameManager>.Instance.Inventory.DeleteAllInventory();
-			ClientSend.RequestInventoryResync();
 			return false;
 		}
 		
@@ -51,13 +50,16 @@ public static class InventorySync
 		
 		GameInventory instance = GameInventory.Instance;
 		bool flag = instance != null;
-		NewInventoryData inventoryData = Singleton<GameManager>.Instance.GameDataManager.CurrentProfileData.inventoryData;
-		List<Item> list = inventoryData.items;
-		if (list == null)
-		{
-			__instance.CreateItemsIfNeeded(0);
-		}
-		else
+        NewInventoryData inventoryData =
+            Singleton<GameManager>.Instance.GameDataManager.CurrentProfileData.inventoryData;
+
+        List<Item> list = inventoryData.items;
+
+        if (list == null)
+        {
+            __instance.CreateItemsIfNeeded(0);
+        }
+        else
 		{
 			__instance.CreateItemsIfNeeded(list.Count);
 			for (int i = 0; i < list.Count; i++)
