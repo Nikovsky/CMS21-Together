@@ -77,25 +77,36 @@ public static class ClientHandle
 
 		SaveSystem.LoadGame(data, MainMod.MAX_SAVE_COUNT - 1);
 	}
-	
-	public static void SpawnPacket(Packet packet)
-	{
-		int playerMoney = packet.ReadInt();
-		int playerExp = packet.ReadInt();
-		int playerLevel = packet.ReadInt();
-		int skillPoints = packet.ReadInt();
-		Vector3Serializable position = packet.Read<Vector3Serializable>();
-		QuaternionSerializable rotation = packet.Read<QuaternionSerializable>();
-		Dictionary<string, List<bool>> skills = packet.Read<Dictionary<string, List<bool>>>();
-		long startItemUID = packet.Read<long>();
-		int missionFinished = packet.ReadInt();
-		bool missionInProgress = packet.Read<bool>();
-		
-		MelonCoroutines.Start(ClientData.Instance.SpawnPlayer(playerMoney, playerExp, playerLevel, position.toVector3(),
-			rotation.toQuaternion(), skillPoints, skills, startItemUID, missionFinished, missionInProgress));
-	}
 
-	public static void PositionPacket(Packet packet)
+    public static void SpawnPacket(Packet packet)
+    {
+        int playerExp = packet.ReadInt();
+        int playerLevel = packet.ReadInt();
+        int skillPoints = packet.ReadInt();
+
+        Vector3Serializable position =
+            packet.Read<Vector3Serializable>();
+
+        QuaternionSerializable rotation =
+            packet.Read<QuaternionSerializable>();
+
+        Dictionary<string, List<bool>> skills =
+            packet.Read<Dictionary<string, List<bool>>>();
+
+        MelonLogger.Msg(
+            "[NET-001] SpawnPacket decoded successfully.");
+
+        MelonCoroutines.Start(
+            ClientData.Instance.SpawnPlayer(
+                playerExp,
+                playerLevel,
+                position.toVector3(),
+                rotation.toQuaternion(),
+                skillPoints,
+                skills));
+    }
+
+    public static void PositionPacket(Packet packet)
 	{
 		var id = packet.ReadInt();
 		var position = packet.Read<Vector3Serializable>();

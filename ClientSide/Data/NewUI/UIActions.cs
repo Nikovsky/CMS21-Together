@@ -52,10 +52,29 @@ public static class UIActions
 	}
 	public static void StartServer(string username, int save_index)
 	{
-		ClientData.UserData.username = username;
-		TogetherModManager.SavePreferences();
-		
-		Client.Instance.OnConnected += () =>
+
+        if (!SaveSystem.IsInitialized)
+        {
+            MelonLogger.Error(
+                "[SAVE-001] Host start blocked: profile initialization incomplete.");
+
+            UICustomPanel.CreateInfoPanel(
+                "Cannot start multiplayer: save profiles failed to initialize. Restart the game.");
+
+            return;
+        }
+
+        if (SaveSlotGuard.Inspect(save_index) == SaveSlotState.Protected)
+        {
+            UICustomPanel.CreateInfoPanel(
+                "Existing or unknown save: slot protected. No game started.");
+            return;
+        }
+
+        ClientData.UserData.username = username;
+        TogetherModManager.SavePreferences();
+
+        Client.Instance.OnConnected += () =>
 		{
 			UICore.ShowPanel(UICore.MP_Lobby);
 			if (ClientData.UserData.selectedNetworkType == NetworkType.Steam)
@@ -68,6 +87,7 @@ public static class UIActions
 			UICore.ShowPanel(UICore.MP_Main);
 			UICustomPanel.CreateInfoPanel("Failed to connect to server !");
 		};
+
 		Server.Instance.StartServer(ClientData.UserData.selectedNetworkType);
 		SaveSystem.LoadGame(SaveSystem.Extensions[save_index], save_index);
 	}
@@ -108,6 +128,11 @@ public static class UIActions
 
 	public static void CreateNewSave(InputField input, StringSelector selector, MainMenuButton btn, int index)
 	{
+		if (SaveSlotGuard.Inspect(index) != SaveSlotState.Empty)
+		{
+			UICustomPanel.CreateInfoPanel("Slot is occupied or protected. No changes made.");
+			return;
+		}
 		if (SaveSystem.Extensions.Any(s => s.Name == input.text))
 		{
 			UICustomPanel.CreateInfoPanel("A save with the same name already exist.");
@@ -123,6 +148,11 @@ public static class UIActions
 
 	public static void DeleteSave(MainMenuButton button, int save_index)
 	{
+		if (SaveSlotGuard.Inspect(save_index) == SaveSlotState.Protected)
+		{
+			UICustomPanel.CreateInfoPanel("Unknown or legacy save: deletion blocked.");
+			return;
+		}
 		SaveSystem.DeleteSave(save_index);
 
 		button.GetComponentInChildren<Text>().text = "New Game";

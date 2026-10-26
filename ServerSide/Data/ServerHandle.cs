@@ -159,22 +159,30 @@ public static class ServerHandle
 		ServerSend.GroupItemDeletePacket(UId);
 	}
 
-	public static void InventoryResyncRequest(int fromClient, Packet packet)
-	{
-		MelonLogger.Msg($"Received Inventory sync request: {ServerData.Instance.items.Count} , {ServerData.Instance.groupItems.Count}");
-		
-		for (int i = 0; i < ServerData.Instance.items.Count; i++)
-		{
-			ServerSend.AddItemPacket(ServerData.Instance.items[i]);
-		}
 
-		for (int i = 0; i < ServerData.Instance.groupItems.Count; i++)
-		{
-			ServerSend.AddGroupItemPacket(ServerData.Instance.groupItems[i]);
-		}
-	}
+    public static void InventoryResyncRequest(int fromClient, Packet packet)
+    {
+        MelonLogger.Msg(
+            $"[INV-SYNC] Sending inventory to client={fromClient}: " +
+            $"items={ServerData.Instance.items.Count}, " +
+            $"groups={ServerData.Instance.groupItems.Count}");
 
-	public static void StatPacket(int fromClient, Packet packet)
+        for (int i = 0; i < ServerData.Instance.items.Count; i++)
+        {
+            ServerSend.SendInventoryItemToClient(
+                fromClient,
+                ServerData.Instance.items[i]);
+        }
+
+        for (int i = 0; i < ServerData.Instance.groupItems.Count; i++)
+        {
+            ServerSend.SendInventoryGroupToClient(
+                fromClient,
+                ServerData.Instance.groupItems[i]);
+        }
+    }
+
+    public static void StatPacket(int fromClient, Packet packet)
 	{
 		var value = packet.ReadInt();
 		var type = packet.Read<ModStats>();

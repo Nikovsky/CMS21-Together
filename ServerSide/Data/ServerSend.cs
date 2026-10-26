@@ -79,8 +79,31 @@ public static class ServerSend
 			SendDataToAll(packet);
 		}
 	}
-	
-	public static void GroupItemDeletePacket(long UId)
+
+    public static void SendInventoryItemToClient(
+        int clientId, ModItem item)
+    {
+        using (var packet = new Packet(
+            (int)PacketTypes.requestAddItem))
+        {
+            packet.Write(item);
+            SendData(clientId, packet);
+        }
+    }
+
+    public static void SendInventoryGroupToClient(
+        int clientId, ModGroupItem item)
+    {
+        using (var packet = new Packet(
+            (int)PacketTypes.requestAddGroupItem))
+        {
+            packet.Write(item);
+            SendData(clientId, packet);
+        }
+    }
+
+
+    public static void GroupItemDeletePacket(long UId)
 	{
 		using (var packet = new Packet((int)PacketTypes.requestGroupItemDelete))
 		{
