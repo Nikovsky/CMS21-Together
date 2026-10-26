@@ -198,20 +198,51 @@ public static class InventorySync
 		ClientSend.RequestItemDelete(new ModItem(item));
 		return false;
 	}
-	
-	public static IEnumerator AddItem(ModItem item)
-	{
-		while (!GameLoadHook.IsGameReady())
-			yield return new WaitForSeconds(0.1f);
-		
-		isSyncing = true;
-		GameData.Instance.localInventory.Add(item.ToGame());
-		
-		UIManager.Get().ShowPopup("PopUp_NewItem", GameInventory.Instance.GetItemLocalizeName(item.ID), PopupType.Buy);
-		SoundManager.Get().PlaySFXOneShot("Popup");
-	}
-	
-	public static IEnumerator DeleteItem(ModItem item)
+
+
+    public static IEnumerator AddItem(ModItem item)
+    {
+        while (!GameLoadHook.IsGameReady())
+            yield return new WaitForSeconds(0.1f);
+
+        var inventory = GameData.Instance.localInventory;
+
+        // Ignore an item already present with the same valid UID.
+        if (item.UID > 0)
+        {
+            for (int i = 0; i < inventory.items.Count; i++)
+            {
+                var existing = inventory.items[i];
+
+                if (existing != null && existing.UID == item.UID)
+                {
+                    MelonLogger.Warning(
+                        $"[INV-SYNC-002] Duplicate item skipped: " +
+                        $"uid={item.UID} id={item.ID}");
+
+                    yield break;
+                }
+            }
+        }
+        else
+        {
+            MelonLogger.Warning(
+                $"[INV-SYNC-002] Item has non-positive UID: " +
+                $"uid={item.UID} id={item.ID}");
+        }
+
+        isSyncing = true;
+        inventory.Add(item.ToGame());
+
+        UIManager.Get().ShowPopup(
+            "PopUp_NewItem",
+            GameInventory.Instance.GetItemLocalizeName(item.ID),
+            PopupType.Buy);
+
+        SoundManager.Get().PlaySFXOneShot("Popup");
+    }
+
+    public static IEnumerator DeleteItem(ModItem item)
 	{
 		while (!GameLoadHook.IsGameReady())
 			yield return new WaitForSeconds(0.1f);
