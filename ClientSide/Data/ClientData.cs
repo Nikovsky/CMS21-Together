@@ -166,34 +166,29 @@ public class ClientData
 		}
 	}
 
-	public IEnumerator SpawnPlayer(int _money, int _exp, int _level, Vector3 pos, Quaternion rot, int skillPoints, Dictionary<string,
-		List<bool>> skills, long startItemUid, int missionFinished, bool missionInProgress)
-	{
-		while (!GameLoadHook.IsGameReady())
+
+    public IEnumerator SpawnPlayer(
+        int _exp,
+        int _level,
+        Vector3 pos,
+        Quaternion rot,
+        int skillPoints,
+        Dictionary<string, List<bool>> skills)
+    {
+        while (!GameLoadHook.IsGameReady())
 			yield return new WaitForSeconds(0.1f);
 
-		UIDManager.LastUID = startItemUid;
-		MelonLogger.Msg("\nReceived Player info! : \n"
-		                + $"MissionFinished : {missionFinished}\n"
-		                + $"StoryInProgress : {missionInProgress}\n"
-		                + $"StartItemUID : {startItemUid}\n"
-		                + $"Exp : {_exp}\n"
-		                + $"Money : {_money}\n"
-		                + $"Level : {_level}\n"
-		                + $"Exp : {_exp}\n"
-		                + $"SkillPoints : {skillPoints}\n");
-		if (GameManager.Instance.GameDataManager.CurrentProfileData.Difficulty != DifficultyLevel.Sandbox)
-		{
-			GlobalData.PlayerLevel = _level;
-			UIManager.Get().StatsContainer.CurrentLevel = _level;
-			UIManager.Get().StatsContainer.Refresh(StatType.Level, true);
-			GlobalData.PlayerExp = _exp;
-			UIManager.Get().StatsContainer.Refresh(StatType.Experience, true);
-			GlobalData.PlayerMoney = _money;
-			UIManager.Get().StatsContainer.Refresh(StatType.Money, true);
-			
-			Singleton<GameManager>.Instance.UpgradeSystem.availablePoints = skillPoints;
-			if (skills != null)
+        if (GameManager.Instance.GameDataManager.CurrentProfileData.Difficulty != DifficultyLevel.Sandbox)
+        {
+            GlobalData.PlayerLevel = _level;
+            UIManager.Get().StatsContainer.CurrentLevel = _level;
+            UIManager.Get().StatsContainer.Refresh(StatType.Level, true);
+
+            GlobalData.PlayerExp = _exp;
+            UIManager.Get().StatsContainer.Refresh(StatType.Experience, true);
+
+            Singleton<GameManager>.Instance.UpgradeSystem.availablePoints = skillPoints;
+            if (skills != null)
 			{
 				GameData.Instance.garageTools.upgradeSystem.LockUpgradesForPoints();
 				foreach (KeyValuePair<string, List<bool>> skill in skills)
@@ -208,9 +203,6 @@ public class ClientData
 				}
 			}
 		}
-
-		GlobalData.MissionsFinished = missionFinished;
-		GlobalData.IsStoryMissionInProgress = missionInProgress;
 		
 		if (pos != Vector3.zero)
 			GameData.Instance.localPlayer.transform.position = pos;
